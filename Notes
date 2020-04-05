@@ -1,0 +1,113 @@
+# !/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+from PyQt5.QtWidgets import QMessageBox, QLineEdit
+from PyQt5.QtGui import QIcon
+
+import sys
+import os
+
+
+class FileEdit(QLineEdit):
+    def __init__(self, parent):
+        super(FileEdit, self).__init__(parent)
+
+        self.setDragEnabled(True)
+
+    def dragEnterEvent(self, event):
+        data = event.mimeData()
+        urls = data.urls()
+        if urls and urls[0].scheme() == 'file':
+            event.acceptProposedAction()
+
+    def dragMoveEvent(self, event):
+        data = event.mimeData()
+        urls = data.urls()
+        if urls and urls[0].scheme() == 'file':
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        data = event.mimeData()
+        urls = data.urls()
+        if urls and urls[0].scheme() == 'file':
+            filepath = str(urls[0].path())[1:]
+            # any file type here
+            if filepath[-4:].upper() == ".txt":
+                self.setText(filepath)
+            else:
+                dialog = QMessageBox()
+                dialog.setWindowTitle("Error: Invalid File")
+                dialog.setText("Only .txt files are accepted")
+                dialog.setIcon(QMessageBox.Warning)
+                dialog.exec_()
+
+
+Reddit
+
+https://www.reddit.com/r/learnpython/comments/97z5dq/pyqt5_drag_and_drop_file_option/
+
+
+import os, sys
+
+from PySide2.QtWidgets import QApplication, QMainWindow, QListWidget, QListWidgetItem, QPushButton, QLabel
+from PySide2.QtCore import Qt, QUrl
+
+class ListBox(QListWidget):
+
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore
+
+    def dragMoveEvent(self, e):
+        if e.mimeData().hasUrls():
+            e.setDropAction(Qt.CopyAction)
+            e.accept()
+        else:
+            e.ignore()
+
+    def dropEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.setDropAction(Qt.CopyAction)
+            event.accept()
+
+            for url in event.mimeData().urls():
+                if url.isLocalFile():
+                    self.links.append(str(url.toLocalFile()))
+
+                self.addItems(self.links)
+        else:
+            event.ignore()
+
+
+class AppDemo(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.resize(1200, 600)
+
+        self.listView = ListBox(self)
+
+        self.btn = QPushButton("Get Value", self)
+        self.btn.setGeometry(850, 100, 400, 40)
+
+        self.btn.clicked.connect(self.uffer)
+
+    def getSelectedItem(self):
+        item = QListWidgetItem(self.listView.currentItem())
+        return item.text()
+
+    def uffer(self):
+        self.lbl = QLabel("This is it! ")
+        self.close()
+        self.lbl.show()
+
+app = QApplication(sys.argv)
+
+demo = AppDemo()
+
+demo.show()
+
+sys.exit(app.exec_())
+
