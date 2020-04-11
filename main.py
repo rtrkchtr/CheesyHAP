@@ -3,11 +3,14 @@
 
 import sys, os
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QListWidget, QListWidgetItem, QTextEdit
-from PyQt5.QtCore import Qt, QUrl, QRunnable, pyqtSlot, QThreadPool, pyqtSignal, QObject
+from PyQt5.QtWidgets import QApplication, QMainWindow, QListWidget, QListWidgetItem, QTextEdit, QLabel
+from PyQt5.QtCore import Qt, QRunnable, pyqtSlot, QThreadPool, pyqtSignal, QObject
 from PyQt5.QtGui import QPixmap
 from ui.mainwindow import Ui_MainWindow
 import subprocess, os
+import check
+
+
 
 
 #-----Drag and Drop Files class -------
@@ -70,6 +73,7 @@ class modifiedMainWindow(Ui_MainWindow):
 class Mainframe(QMainWindow):
     def __init__(self):
         super().__init__()
+
         self.ui = modifiedMainWindow()
         self.ui.setupUi(self)
         self.ui.exportbutton.clicked.connect(self.run_export)
@@ -77,6 +81,22 @@ class Mainframe(QMainWindow):
         pixmap = QPixmap('ressources/kaese2.png')
         self.ui.pixmap_label_7.setPixmap(pixmap)
         self.ui.set_output_directory = modQTestEdit(self.ui.Output_dir_textEdit)
+        self.ui.label_warning_big.hide()
+        self.ui.label_warning_small.hide()
+        self.ui.textEdit_custom_resolution_height.setDisabled(True)
+        self.ui.textEdit_custom_resolution_width.setDisabled(True)
+        if check.check.check_if_ffmpeg_is_installed() == False:
+            self.ui.label_warning_big.show()
+            self.ui.label_warning_small.show()
+
+
+
+
+
+    def PopUp(self):
+                self.lbl = QLabel("ffmpeg is missing on this machine.\nPlease Download here:\nwww.ffmpeg.org")
+                self.close()
+                self.lbl.show()
 
     def get_number_of_urls(self, urls):
         url_len = len(urls) # Renamed variable from 'kazoo' to a more meaningful name ;)
@@ -150,7 +170,11 @@ class Mainframe(QMainWindow):
         # I don't think 'state' is used anywhere else, so it can be removed. :)
         # state = self.ui.orig_resolution_checkBox.isChecked()
         if self.ui.orig_resolution_checkBox.isChecked():
-            resolution = None
+            resolution = ''
+        if self.ui.custom_resolution_checkBox.isChecked():
+            custom_resolution_width = self.ui.textEdit_custom_resolution_width.toPlainText()
+            custom_resolution_height = self.ui.textEdit_custom_resolution_height.toPlainText()
+            resolution = str(custom_resolution_width) + 'x' + str(custom_resolution_height)
         else:
             resolution = self.ui.resolution_comboBox.currentText()
         print("selected resoution: " + str(resolution))
@@ -159,17 +183,17 @@ class Mainframe(QMainWindow):
     def check_parameter(self):
         pass
 
-    # @property
-    # def strings_to_remove(self):
-    #     toErase = self.ui.removeInput.toPlainText()
-    #     eraselist = toErase.split(";")
-    #     index = 0
-    #     for element in eraselist:
-    #         if ' ' in eraselist[index]:
-    #             eraselist[index] = element.replace(' ', '')
-    #         index += 1
-    #     print(eraselist)
-    #     return eraselist
+    @property
+    def strings_to_remove(self):
+         toErase = self.ui.removeInput.toPlainText()
+         eraselist = toErase.split(";")
+         index = 0
+         for element in eraselist:
+             if ' ' in eraselist[index]:
+                 eraselist[index] = element.replace(' ', '')
+             index += 1
+         print(eraselist)
+         return eraselist
 
     def get_prefix(self):
         prefix = self.ui.prefixInput.toPlainText()
@@ -277,7 +301,8 @@ class ffmpeg_converter():
         print("prefix: "+ str(self.outprefix))
         print("Eraselist: "+ str(self.toEraseList))
 
-    def rename(self, eraselist, filename):
+
+    def rename(self, eraselist, filename, prefix):
         if eraselist != []:
             for string in eraselist:
                 if string in filename:
@@ -286,14 +311,23 @@ class ffmpeg_converter():
                     print("new filename: " + filename)
             print("removed: "+string)
 
-
+            if prefix != '':
+                filename = str(prefix)+filename
             return filename
+
 
     def command_concat(self):
         filename = os.path.basename(self.fileinputpath)
-        new_filename = self.rename(self.toEraseList, filename)
+        new_filename = self.rename(self.toEraseList, filename, self.outprefix)
         br = ' '
-        command = 'ffmpeg -i' + br + str(self.fileinputpath) + br + '-c:v' + br + str(self.fileformat) + br + str(self.fileoutputpath + new_filename)
+        if self.outresolution == '':
+            command = 'ffmpeg -i' + br + str(self.fileinputpath) + br + '-c:v' + br + str(self.fileformat) + br + str(self.fileoutputpath + new_filename)
+        if self.outresolution != '':
+            resolution = self.outresolution.split("x")
+            print(resolution)
+            scaling = '-vf scale=w='+ resolution[0] + ':' + 'h=' + resolution[1]
+            command = 'ffmpeg -i' + br + str(self.fileinputpath) + br + '-c:v' + br + str(self.fileformat) + br + scaling + br + str(
+                self.fileoutputpath + new_filename)
         print(command)
         return command
 
@@ -315,7 +349,12 @@ class ffmpeg_converter():
     def get_prefix(self):
         return self.prefix
 
+
+
 app = QApplication(sys.argv)
 QtApp = Mainframe()
 QtApp.show()
 sys.exit(app.exec_())
+
+
+    #
