@@ -198,6 +198,9 @@
      <property name="text">
       <string>HAP </string>
      </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
     </widget>
     <widget class="QRadioButton" name="radioButton_HapQ">
      <property name="geometry">
@@ -359,6 +362,9 @@ p, li { white-space: pre-wrap; }
      </property>
     </widget>
     <widget class="QComboBox" name="resolution_comboBox">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>30</x>
@@ -482,7 +488,7 @@ p, li { white-space: pre-wrap; }
      </rect>
     </property>
     <property name="text">
-     <string>CheesyHAP Batch Hap Converter/Exporter v 0.1 by Artur Kechter, based on ffmpeg</string>
+     <string>CheesyHAP Batch Hap Converter/ Exporter v 0.1 by Artur Kechter, based on ffmpeg</string>
     </property>
    </widget>
    <widget class="QProgressBar" name="progressBar">
